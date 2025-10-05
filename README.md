@@ -6,7 +6,7 @@ A production-ready Node.js application that processes GSA onboarding documents u
 
 - **Intelligent Document Processing**: Automatic classification of company profiles, past performance, and pricing sheets
 - **AI-Powered Analysis**: Uses Ollama (llama3.2) for document understanding and field extraction
-- **RAG Integration**: ChromaDB vector store for rule retrieval and compliance checking
+- **RAG Integration**: Simple in-memory vector store for rule retrieval and compliance checking
 - **PII Redaction**: Comprehensive redaction of emails, phone numbers, and SSNs
 - **Compliance Validation**: Automated GSA rule compliance checking with citations
 - **Report Generation**: Auto-generated negotiation briefs and client emails
@@ -112,7 +112,7 @@ getGSA/
 │   │   ├── aiService.ts       # AI/LLM integration
 │   │   ├── documentParser.ts # Document parsing
 │   │   ├── redaction.ts       # PII redaction
-│   │   └── vectorStore.ts     # RAG vector store
+│   │   └── vectorStore.ts     # Simple in-memory RAG vector store
 │   ├── utils/                 # Utilities
 │   │   └── logger.ts          # Logging configuration
 │   └── server.ts              # Express server setup
@@ -121,7 +121,7 @@ getGSA/
 │   └── app.js                # Frontend JavaScript
 ├── data/                      # Data directory (auto-created)
 │   ├── getgsa.db             # SQLite database
-│   └── chroma/               # ChromaDB vector store
+│   └── data/                  # SQLite database (no ChromaDB needed)
 ├── logs/                      # Application logs
 ├── docs/                      # Documentation
 │   ├── ARCHITECTURE.md       # System architecture

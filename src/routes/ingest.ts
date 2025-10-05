@@ -49,7 +49,6 @@ router.post(
 
       const file = req.file;
       const requestId = uuidv4();
-      const documentId = uuidv4();
 
       logger.info('Processing document ingestion', {
         requestId,
@@ -77,7 +76,7 @@ router.post(
       const redactionResult = redactPII(parsed.text);
 
       // Store document in database
-      DocumentRepository.create({
+      const document = DocumentRepository.create({
         request_id: requestId,
         filename: sanitizedFilename,
         file_type: file.mimetype,
@@ -91,7 +90,7 @@ router.post(
       if (redactionResult.matches.length > 0) {
         RedactionRepository.bulkCreate(
           redactionResult.matches.map(match => ({
-            document_id: documentId,
+            document_id: document.id,
             redaction_type: match.type,
             original_value_hash: match.hash,
             position_start: match.start,
@@ -102,7 +101,7 @@ router.post(
 
       // Generate document summary
       const summary = {
-        documentId,
+        documentId: document.id,
         requestId,
         filename: sanitizedFilename,
         fileSize: file.size,
@@ -120,7 +119,7 @@ router.post(
 
       logger.info('Document ingested successfully', {
         requestId,
-        documentId,
+        documentId: document.id,
         redactionCount: redactionResult.redactionCount,
       });
 
