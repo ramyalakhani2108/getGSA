@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  getgsa:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_PATH=/app/data/getgsa.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMA_PATH=/app/data/chroma
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    command: serve
+
+volumes:
+  ollama_data:

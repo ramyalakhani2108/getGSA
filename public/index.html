@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetGSA - Document Processing System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .upload-zone {
+      border: 2px dashed #cbd5e0;
+      transition: all 0.3s;
+    }
+    .upload-zone.drag-over {
+      border-color: #4299e1;
+      background-color: #ebf8ff;
+    }
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .status-healthy {
+      background-color: #48bb78;
+    }
+    .status-degraded {
+      background-color: #ed8936;
+    }
+    .status-unhealthy {
+      background-color: #f56565;
+    }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .badge-compliant {
+      background-color: #c6f6d5;
+      color: #22543d;
+    }
+    .badge-non-compliant {
+      background-color: #fed7d7;
+      color: #742a2a;
+    }
+    .badge-needs-review {
+      background-color: #feebc8;
+      color: #7c2d12;
+    }
+    .badge-critical {
+      background-color: #feb2b2;
+      color: #742a2a;
+    }
+    .badge-high {
+      background-color: #fbd38d;
+      color: #7c2d12;
+    }
+    .badge-medium {
+      background-color: #faf089;
+      color: #744210;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <!-- Header -->
+  <header class="bg-blue-600 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold">GetGSA</h1>
+          <p class="text-blue-100">Government Contract Document Processing</p>
+        </div>
+        <div id="health-status" class="flex items-center bg-blue-700 px-4 py-2 rounded-lg">
+          <span class="status-indicator status-healthy"></span>
+          <span class="text-sm">System: <span id="health-text">Checking...</span></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Left Panel: Upload -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">Document Upload</h2>
+        
+        <!-- Upload Zone -->
+        <div id="upload-zone" class="upload-zone rounded-lg p-8 text-center mb-4 cursor-pointer">
+          <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <p class="text-lg text-gray-600 mb-2">Drag and drop your document here</p>
+          <p class="text-sm text-gray-400 mb-4">or</p>
+          <button id="upload-button" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            Choose File
+          </button>
+          <p class="text-xs text-gray-400 mt-4">Supported: PDF, DOCX, TXT (Max 10MB)</p>
+          <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.doc,.txt">
+        </div>
+
+        <!-- File Info -->
+        <div id="file-info" class="hidden mb-4 p-4 bg-blue-50 rounded-lg">
+          <h3 class="font-semibold text-gray-700 mb-2">Selected File:</h3>
+          <p id="file-name" class="text-sm text-gray-600"></p>
+          <p id="file-size" class="text-sm text-gray-500"></p>
+        </div>
+
+        <!-- Progress -->
+        <div id="progress-section" class="hidden mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700">Processing...</span>
+            <span id="progress-text" class="text-sm text-gray-600">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-4">
+          <button id="ingest-button" class="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+            1. Ingest & Redact
+          </button>
+          <button id="analyze-button" class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+            2. Analyze
+          </button>
+        </div>
+
+        <!-- Sample Documents -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-semibold text-gray-700 mb-3">Sample Documents</h3>
+          <div class="space-y-2">
+            <button class="sample-doc w-full text-left px-4 py-2 bg-white rounded hover:bg-blue-50 transition text-sm" data-type="profile">
+              Company Profile Sample
+            </button>
+            <button class="sample-doc w-full text-left px-4 py-2 bg-white rounded hover:bg-blue-50 transition text-sm" data-type="performance">
+              Past Performance Sample
+            </button>
+            <button class="sample-doc w-full text-left px-4 py-2 bg-white rounded hover:bg-blue-50 transition text-sm" data-type="pricing">
+              Pricing Sheet Sample
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Results -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">Analysis Results</h2>
+        
+        <div id="results-empty" class="text-center py-12">
+          <svg class="mx-auto h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <p class="text-gray-500">No analysis results yet. Upload and process a document to get started.</p>
+        </div>
+
+        <div id="results-content" class="hidden space-y-6">
+          <!-- Classification Section -->
+          <div class="border-b pb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Document Classification</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">Type:</span>
+                <span id="doc-type" class="font-semibold text-gray-800"></span>
+              </div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">Confidence:</span>
+                <span id="doc-confidence" class="font-semibold text-gray-800"></span>
+              </div>
+              <div class="mt-2">
+                <span class="text-sm text-gray-600">Reasoning:</span>
+                <p id="doc-reasoning" class="text-sm text-gray-700 mt-1"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extracted Fields Section -->
+          <div class="border-b pb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Extracted Fields</h3>
+            <div id="extracted-fields" class="space-y-2"></div>
+          </div>
+
+          <!-- RAG Status Section -->
+          <div class="border-b pb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">RAG Rule Retrieval</h3>
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-700">
+                Retrieved <span id="rules-count" class="font-semibold">0</span> relevant rules
+              </p>
+              <div id="rules-list" class="mt-2 space-y-1"></div>
+            </div>
+          </div>
+
+          <!-- Compliance Checklist Section -->
+          <div class="border-b pb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Compliance Checklist</h3>
+            <div class="mb-3 flex gap-4 text-sm">
+              <span class="text-green-700">✓ Compliant: <span id="compliant-count" class="font-semibold">0</span></span>
+              <span class="text-red-700">✗ Non-Compliant: <span id="non-compliant-count" class="font-semibold">0</span></span>
+              <span class="text-yellow-700">⚠ Review: <span id="review-count" class="font-semibold">0</span></span>
+            </div>
+            <div id="checklist-items" class="space-y-3"></div>
+          </div>
+
+          <!-- Negotiation Brief Section -->
+          <div class="border-b pb-4">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Negotiation Brief</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p id="negotiation-brief" class="text-sm text-gray-700 whitespace-pre-wrap"></p>
+            </div>
+          </div>
+
+          <!-- Client Email Section -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Client Email</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p id="client-email" class="text-sm text-gray-700 whitespace-pre-wrap"></p>
+            </div>
+            <button id="copy-email" class="mt-2 text-sm text-blue-600 hover:text-blue-700">
+              📋 Copy to Clipboard
+            </button>
+          </div>
+        </div>
+
+        <div id="results-loading" class="hidden text-center py-12">
+          <div class="spinner mx-auto mb-4"></div>
+          <p class="text-gray-600">Analyzing document...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white mt-12 py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p class="text-sm">&copy; 2025 GetGSA - AI-Powered Government Contract Processing</p>
+      <p class="text-xs text-gray-400 mt-2">Built with Node.js, Ollama, ChromaDB, and ❤️</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
